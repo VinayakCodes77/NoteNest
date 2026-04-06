@@ -1,5 +1,5 @@
 """
-Django settings for my_diary project.
+Django settings for my_diary project — environment-aware (dev + production).
 """
 
 from pathlib import Path
@@ -7,17 +7,22 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-^q70!!6m_%mcq^5c@ft+vqdxqv)omhoz#5rhyt)tq5a9b0e+!6'
+# ------------------------------------------------------------------
+# Security
+# ------------------------------------------------------------------
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-^q70!!6m_%mcq^5c@ft+vqdxqv)omhoz#5rhyt)tq5a9b0e+!6'
+)
 
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() not in ('false', '0', 'no')
 
 ALLOWED_HOSTS = ['*']
 
-# Replit proxy: trust the X-Forwarded-Proto header so Django knows requests
-# arrive over HTTPS even though the internal connection is HTTP.
+# Replit reverse-proxy: the browser hits HTTPS, gunicorn gets plain HTTP.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# All origins Replit may use as the browser-facing host
+# Trusted CSRF origins (Replit dev + deployed domains)
 CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.dev',
     'https://*.repl.co',
@@ -27,15 +32,18 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
 ]
 
-# Allow iframe embedding in Replit's preview pane
+# Allow Replit's preview pane iframe to embed this app
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-# Cookies must work over plain HTTP in the dev environment
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+# In production (DEBUG=False) cookies must be secure; relax for local dev.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
+# ------------------------------------------------------------------
+# Application definition
+# ------------------------------------------------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -77,6 +85,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'my_diary.wsgi.application'
 
+# ------------------------------------------------------------------
+# Database — SQLite for dev/prod (persistent on Replit VM)
+# ------------------------------------------------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -84,6 +95,9 @@ DATABASES = {
     }
 }
 
+# ------------------------------------------------------------------
+# Password validation
+# ------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -91,11 +105,17 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ------------------------------------------------------------------
+# Internationalisation
+# ------------------------------------------------------------------
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ------------------------------------------------------------------
+# Static files — served by WhiteNoise (no separate CDN needed)
+# ------------------------------------------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -108,6 +128,9 @@ STORAGES = {
     },
 }
 
+# ------------------------------------------------------------------
+# Misc
+# ------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
