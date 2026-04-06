@@ -30,6 +30,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.worf.replit.dev',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'http://localhost:25107',
+    'http://127.0.0.1:25107',
 ]
 
 # Allow Replit's preview pane iframe to embed this app

@@ -1,0 +1,35 @@
+kind = "web"
+previewPath = "/"
+title = "NoteNest"
+version = "1.0.0"
+id = "artifacts/notenest"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25107
+
+[services.env]
+PORT = "25107"
+DJANGO_DEBUG = "True"
+
+[services.development]
+run = "cd /home/runner/workspace/django_project/NoteNest && python manage.py migrate --noinput && python manage.py collectstatic --noinput && python -m gunicorn my_diary.wsgi:application --bind 0.0.0.0:25107 --workers 2 --timeout 120 --access-logfile - --error-logfile -"
+
+[services.production]
+
+[services.production.run]
+args = ["sh", "-c", "cd /home/runner/workspace/django_project/NoteNest && python manage.py migrate --noinput && python manage.py collectstatic --noinput && python -m gunicorn my_diary.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
+
+[services.production.run.env]
+PORT = "25107"
+DJANGO_DEBUG = "False"
+DJANGO_SECRET_KEY = "swmi6%8qs4*4*h#ww(=(wf3#jiq*(1x%-n5s*t@gvoakn0jujb"
+
+[services.production.health.startup]
+path = "/accounts/login/"
