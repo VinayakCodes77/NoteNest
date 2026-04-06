@@ -31,13 +31,13 @@ args = "NoteNest Django"
 name = "NoteNest Django"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd django_project/NoteNest && python manage.py runserver 0.0.0.0:8000"
-waitForPort = 8000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd django_project/NoteNest && python manage.py migrate --noinput && python manage.py collectstatic --noinput && python -m gunicorn my_diary.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"
+waitForPort = 8000
 
 [agent]
 stack = "PNPM_WORKSPACE"
@@ -50,3 +50,12 @@ timeoutMs = 20000
 [nix]
 channel = "stable-25_05"
 packages = ["pgadmin4"]
+
+[userenv]
+
+[userenv.production]
+DJANGO_DEBUG = "False"
+DJANGO_SECRET_KEY = "swmi6%8qs4*4*h#ww(=(wf3#jiq*(1x%-n5s*t@gvoakn0jujb"
+
+[userenv.development]
+DJANGO_DEBUG = "True"
