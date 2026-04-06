@@ -13,11 +13,28 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Replit proxy: trust the X-Forwarded-Proto header so Django knows requests
+# arrive over HTTPS even though the internal connection is HTTP.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# All origins Replit may use as the browser-facing host
 CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.dev',
     'https://*.repl.co',
     'https://*.replit.app',
+    'https://*.worf.replit.dev',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
+
+# Allow iframe embedding in Replit's preview pane
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+# Cookies must work over plain HTTP in the dev environment
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -49,6 +66,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
