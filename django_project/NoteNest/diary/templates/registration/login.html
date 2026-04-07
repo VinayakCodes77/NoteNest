@@ -1,29 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Diary - Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteNest – Sign In</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .auth-card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
-        h2 { color: #4a90e2; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; background: #4a90e2; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .link { margin-top: 20px; font-size: 14px; }
-        a { color: #4a90e2; text-decoration: none; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .card-header { text-align: center; margin-bottom: 28px; }
+        .card-header h1 { font-size: 26px; color: #1a1a2e; font-weight: 700; }
+        .card-header p  { color: #888; font-size: 14px; margin-top: 6px; }
+
+        /* ---- Field group ---- */
+        .field { margin-bottom: 18px; }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 11px 40px 11px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1a1a2e;
+            transition: border-color .2s, box-shadow .2s;
+            outline: none;
+            background: #fafafa;
+        }
+
+        input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,.15);
+            background: #fff;
+        }
+
+        input.invalid { border-color: #ef4444; }
+
+        /* toggle eye */
+        .eye-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+        }
+        .eye-btn:hover { color: #667eea; }
+        .eye-btn svg { width: 18px; height: 18px; }
+
+        /* ---- Error messages ---- */
+        .form-errors {
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+        }
+        .form-errors p {
+            color: #dc2626;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ---- Submit button ---- */
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: opacity .2s, transform .1s;
+        }
+        .btn-submit:hover  { opacity: .92; transform: translateY(-1px); }
+        .btn-submit:active { transform: translateY(0); }
+
+        .footer-link { text-align: center; font-size: 13px; color: #888; margin-top: 20px; }
+        .footer-link a { color: #667eea; font-weight: 600; text-decoration: none; }
+        .footer-link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <h2>Welcome Back</h2>
-        <form method="POST">
-            {% csrf_token %}
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        <div class="link">
-            New here? <a href="{% url 'signup' %}">Create an account</a>
-        </div>
+<div class="card">
+    <div class="card-header">
+        <h1>📓 Welcome Back</h1>
+        <p>Sign in to your NoteNest diary</p>
     </div>
+
+    {% if form.errors %}
+    <div class="form-errors">
+        <p>⚠ Incorrect username or password. Please try again.</p>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'login' %}">
+        {% csrf_token %}
+        {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        <!-- USERNAME -->
+        <div class="field">
+            <label for="id_username">Username</label>
+            <div class="input-wrap">
+                <input
+                    type="text"
+                    id="id_username"
+                    name="username"
+                    autocomplete="username"
+                    placeholder="Enter your username"
+                    value="{{ form.username.value|default:'' }}"
+                    {% if form.errors %}class="invalid"{% endif %}
+                    required
+                >
+            </div>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="field">
+            <label for="id_password">Password</label>
+            <div class="input-wrap">
+                <input
+                    type="password"
+                    id="id_password"
+                    name="password"
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                    {% if form.errors %}class="invalid"{% endif %}
+                    required
+                >
+                <button type="button" class="eye-btn" onclick="togglePassword()" aria-label="Toggle password">
+                    <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
+                               -1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Sign In</button>
+    </form>
+
+    <div class="footer-link">
+        Don't have an account? <a href="{% url 'signup' %}">Create one</a>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const input = document.getElementById('id_password');
+    const btn   = document.querySelector('.eye-btn');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+
+    const open  = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    const slash = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
+
+    document.getElementById('eyeIcon').innerHTML = isHidden ? slash : open;
+    btn.style.color = isHidden ? '#667eea' : '#aaa';
+}
+</script>
 </body>
 </html>
