@@ -19,7 +19,7 @@ PORT = "25107"
 DJANGO_DEBUG = "True"
 
 [services.development]
-run = "cd /home/runner/workspace/django_project/NoteNest && python manage.py migrate --noinput && python manage.py collectstatic --noinput && python -m gunicorn my_diary.wsgi:application --bind 0.0.0.0:25107 --workers 2 --timeout 120 --access-logfile - --error-logfile -"
+run = "cd /home/runner/workspace/django_project/NoteNest && python manage.py migrate --noinput && python -m gunicorn my_diary.wsgi:application --bind 0.0.0.0:25107 --workers 2 --timeout 120 --access-logfile - --error-logfile -"
 
 [services.production]
 

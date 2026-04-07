@@ -1,30 +1,519 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Diary - Sign Up</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteNest – Create Account</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .auth-card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h2 { color: #4a90e2; margin-bottom: 20px; }
-        form p { text-align: left; color: #666; font-size: 14px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; background: #4a90e2; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        button:hover { background: #357abd; }
-        .link { margin-top: 20px; font-size: 14px; }
-        a { color: #4a90e2; text-decoration: none; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .card-header { text-align: center; margin-bottom: 28px; }
+        .card-header h1 { font-size: 26px; color: #1a1a2e; font-weight: 700; }
+        .card-header p  { color: #888; font-size: 14px; margin-top: 6px; }
+
+        /* ---- Field group ---- */
+        .field { margin-bottom: 18px; }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 11px 40px 11px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1a1a2e;
+            transition: border-color .2s, box-shadow .2s;
+            outline: none;
+            background: #fafafa;
+        }
+
+        input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.15); background:#fff; }
+        input.valid   { border-color: #22c55e; }
+        input.invalid { border-color: #ef4444; }
+
+        /* toggle eye */
+        .eye-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+        }
+        .eye-btn:hover { color: #667eea; }
+        .eye-btn svg { width: 18px; height: 18px; }
+
+        /* username status badge */
+        .username-status {
+            font-size: 12px;
+            margin-top: 5px;
+            min-height: 16px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+        }
+        .username-status.taken     { color: #ef4444; }
+        .username-status.available { color: #22c55e; }
+        .username-status.checking  { color: #f59e0b; }
+        .username-status.invalid   { color: #ef4444; }
+
+        /* ---- Password checklist ---- */
+        .pw-rules {
+            margin-top: 10px;
+            padding: 12px 14px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border: 1.5px solid #e8eaff;
+            display: none;
+        }
+        .pw-rules.visible { display: block; }
+        .pw-rules p { font-size: 12px; color: #666; margin-bottom: 6px; font-weight: 600; }
+
+        .rule {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            color: #888;
+            margin-bottom: 4px;
+            transition: color .2s;
+        }
+        .rule.pass { color: #22c55e; }
+        .rule .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1.5px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all .2s;
+        }
+        .rule.pass .dot { background: #22c55e; border-color: #22c55e; }
+        .rule .dot::after {
+            content: '';
+            display: none;
+            width: 5px;
+            height: 8px;
+            border: 2px solid #fff;
+            border-top: none;
+            border-left: none;
+            transform: rotate(45deg) translateY(-1px);
+        }
+        .rule.pass .dot::after { display: block; }
+
+        /* field-level error */
+        .field-error {
+            font-size: 12px;
+            color: #ef4444;
+            margin-top: 5px;
+            min-height: 16px;
+        }
+
+        /* global errors from backend */
+        .form-errors {
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+        }
+        .form-errors p { color: #dc2626; font-size: 13px; }
+
+        /* strength bar */
+        .strength-bar-wrap { margin-top: 8px; display: none; }
+        .strength-bar-wrap.visible { display: block; }
+        .strength-bar { height: 4px; border-radius: 4px; background: #e5e7eb; overflow: hidden; }
+        .strength-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width .3s, background .3s;
+        }
+        .strength-label { font-size: 11px; color: #888; margin-top: 4px; text-align: right; }
+
+        /* submit */
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: opacity .2s, transform .1s;
+        }
+        .btn-submit:hover:not(:disabled)  { opacity: .92; transform: translateY(-1px); }
+        .btn-submit:active:not(:disabled) { transform: translateY(0); }
+        .btn-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+        .footer-link { text-align: center; font-size: 13px; color: #888; margin-top: 20px; }
+        .footer-link a { color: #667eea; font-weight: 600; text-decoration: none; }
+        .footer-link a:hover { text-decoration: underline; }
+
+        /* spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width: 12px; height: 12px;
+            border: 2px solid #f59e0b;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <h2>Create Account</h2>
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Sign Up</button>
-        </form>
-        <div class="link">
-            Already have an account? <a href="{% url 'login' %}">Login here</a>
-        </div>
+<div class="card">
+    <div class="card-header">
+        <h1>📓 Create Account</h1>
+        <p>Join NoteNest and start your private diary</p>
     </div>
+
+    {% if form.non_field_errors %}
+    <div class="form-errors">
+        {% for error in form.non_field_errors %}
+        <p>⚠ {{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" id="signupForm" novalidate>
+        {% csrf_token %}
+
+        <!-- USERNAME -->
+        <div class="field">
+            <label for="id_username">Username</label>
+            <div class="input-wrap">
+                <input
+                    type="text"
+                    id="id_username"
+                    name="username"
+                    value="{{ form.username.value|default:'' }}"
+                    autocomplete="username"
+                    placeholder="Choose a username"
+                    {% if form.username.errors %}class="invalid"{% endif %}
+                >
+            </div>
+            <div class="username-status" id="usernameStatus"></div>
+            {% if form.username.errors %}
+            <div class="field-error">{{ form.username.errors.0 }}</div>
+            {% else %}
+            <div class="field-error" id="usernameError"></div>
+            {% endif %}
+        </div>
+
+        <!-- PASSWORD 1 -->
+        <div class="field">
+            <label for="id_password1">Password</label>
+            <div class="input-wrap">
+                <input
+                    type="password"
+                    id="id_password1"
+                    name="password1"
+                    autocomplete="new-password"
+                    placeholder="Create a strong password"
+                    {% if form.password1.errors %}class="invalid"{% endif %}
+                >
+                <button type="button" class="eye-btn" onclick="togglePassword('id_password1', this)" aria-label="Toggle password">
+                    <svg id="eyeIcon1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Strength bar -->
+            <div class="strength-bar-wrap" id="strengthBarWrap">
+                <div class="strength-bar">
+                    <div class="strength-fill" id="strengthFill" style="width:0%"></div>
+                </div>
+                <div class="strength-label" id="strengthLabel"></div>
+            </div>
+
+            <!-- Rules checklist -->
+            <div class="pw-rules" id="pwRules">
+                <p>Password must have:</p>
+                <div class="rule" id="rule-length">
+                    <span class="dot"></span> At least 8 characters
+                </div>
+                <div class="rule" id="rule-upper">
+                    <span class="dot"></span> At least 1 uppercase letter
+                </div>
+                <div class="rule" id="rule-number">
+                    <span class="dot"></span> At least 1 number
+                </div>
+                <div class="rule" id="rule-special">
+                    <span class="dot"></span> At least 1 special character (!@#$%…)
+                </div>
+            </div>
+            {% if form.password1.errors %}
+            <div class="field-error">{{ form.password1.errors.0 }}</div>
+            {% else %}
+            <div class="field-error" id="pw1Error"></div>
+            {% endif %}
+        </div>
+
+        <!-- PASSWORD 2 -->
+        <div class="field">
+            <label for="id_password2">Confirm Password</label>
+            <div class="input-wrap">
+                <input
+                    type="password"
+                    id="id_password2"
+                    name="password2"
+                    autocomplete="new-password"
+                    placeholder="Repeat your password"
+                    {% if form.password2.errors %}class="invalid"{% endif %}
+                >
+                <button type="button" class="eye-btn" onclick="togglePassword('id_password2', this)" aria-label="Toggle confirm password">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                </button>
+            </div>
+            {% if form.password2.errors %}
+            <div class="field-error">{{ form.password2.errors.0 }}</div>
+            {% else %}
+            <div class="field-error" id="pw2Error"></div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">Create Account</button>
+    </form>
+
+    <div class="footer-link">
+        Already have an account? <a href="{% url 'login' %}">Sign in</a>
+    </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------
+const $ = id => document.getElementById(id);
+
+function setInputState(input, state) {
+    input.classList.remove('valid', 'invalid');
+    if (state) input.classList.add(state);
+}
+
+// ---------------------------------------------------------------
+// Show / Hide password toggle
+// ---------------------------------------------------------------
+function togglePassword(inputId, btn) {
+    const input = $(inputId);
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+
+    const open  = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    const slash = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
+
+    btn.querySelector('svg').innerHTML = isHidden ? slash : open;
+    btn.style.color = isHidden ? '#667eea' : '#aaa';
+}
+
+// ---------------------------------------------------------------
+// Username availability (debounced AJAX)
+// ---------------------------------------------------------------
+const usernameInput  = $('id_username');
+const usernameStatus = $('usernameStatus');
+const usernameError  = $('usernameError');
+let usernameValid    = false;
+let usernameTimer;
+
+usernameInput.addEventListener('input', () => {
+    clearTimeout(usernameTimer);
+    const val = usernameInput.value.trim();
+    usernameStatus.className = 'username-status';
+    usernameStatus.innerHTML = '';
+    if (!val) { setInputState(usernameInput, ''); usernameValid = false; updateSubmit(); return; }
+    if (val.length < 3) {
+        usernameStatus.className = 'username-status invalid';
+        usernameStatus.textContent = 'Too short — minimum 3 characters';
+        setInputState(usernameInput, 'invalid');
+        usernameValid = false; updateSubmit(); return;
+    }
+    // show spinner after 200 ms
+    usernameTimer = setTimeout(() => {
+        usernameStatus.className = 'username-status checking';
+        usernameStatus.innerHTML = '<span class="spinner"></span> Checking…';
+
+        fetch(`/check-username/?username=${encodeURIComponent(val)}`)
+            .then(r => r.json())
+            .then(data => {
+                usernameStatus.innerHTML = '';
+                if (data.status === 'available') {
+                    usernameStatus.className = 'username-status available';
+                    usernameStatus.innerHTML = '✓ ' + data.message;
+                    setInputState(usernameInput, 'valid');
+                    usernameValid = true;
+                } else {
+                    usernameStatus.className = 'username-status taken';
+                    usernameStatus.innerHTML = '✗ ' + data.message;
+                    setInputState(usernameInput, 'invalid');
+                    usernameValid = false;
+                }
+                updateSubmit();
+            })
+            .catch(() => {
+                usernameStatus.className = 'username-status';
+                usernameStatus.textContent = '';
+                usernameValid = false;
+                updateSubmit();
+            });
+    }, 400);
+    updateSubmit();
+});
+
+// ---------------------------------------------------------------
+// Password validation rules
+// ---------------------------------------------------------------
+const pw1Input      = $('id_password1');
+const pw2Input      = $('id_password2');
+const pw2Error      = $('pw2Error');
+const pwRules       = $('pwRules');
+const strengthWrap  = $('strengthBarWrap');
+const strengthFill  = $('strengthFill');
+const strengthLabel = $('strengthLabel');
+let pwValid = false;
+
+const RULES = [
+    { id: 'rule-length',  test: v => v.length >= 8 },
+    { id: 'rule-upper',   test: v => /[A-Z]/.test(v) },
+    { id: 'rule-number',  test: v => /\d/.test(v) },
+    { id: 'rule-special', test: v => /[^A-Za-z0-9]/.test(v) },
+];
+
+const STRENGTH_LEVELS = [
+    { label: 'Too weak',  color: '#ef4444', width: '15%' },
+    { label: 'Weak',      color: '#f97316', width: '30%' },
+    { label: 'Fair',      color: '#f59e0b', width: '55%' },
+    { label: 'Good',      color: '#84cc16', width: '75%' },
+    { label: 'Strong',    color: '#22c55e', width: '100%' },
+];
+
+pw1Input.addEventListener('focus', () => {
+    pwRules.classList.add('visible');
+    strengthWrap.classList.add('visible');
+});
+
+pw1Input.addEventListener('input', () => {
+    const val = pw1Input.value;
+    let passed = 0;
+    RULES.forEach(r => {
+        const ok = r.test(val);
+        const el = $(r.id);
+        el.classList.toggle('pass', ok);
+        if (ok) passed++;
+    });
+    pwValid = passed === RULES.length;
+    setInputState(pw1Input, val.length === 0 ? '' : pwValid ? 'valid' : 'invalid');
+
+    // strength bar
+    const idx = val.length === 0 ? -1 : Math.min(passed, 4);
+    if (idx >= 0) {
+        const s = STRENGTH_LEVELS[idx];
+        strengthFill.style.width     = s.width;
+        strengthFill.style.background = s.color;
+        strengthLabel.textContent    = s.label;
+        strengthLabel.style.color    = s.color;
+    } else {
+        strengthFill.style.width = '0%';
+        strengthLabel.textContent = '';
+    }
+
+    validateConfirm();
+    updateSubmit();
+});
+
+// ---------------------------------------------------------------
+// Confirm password match
+// ---------------------------------------------------------------
+function validateConfirm() {
+    const p1 = pw1Input.value;
+    const p2 = pw2Input.value;
+    if (!p2) { setInputState(pw2Input, ''); pw2Error.textContent = ''; return; }
+    if (p1 === p2) {
+        setInputState(pw2Input, 'valid');
+        pw2Error.textContent = '';
+    } else {
+        setInputState(pw2Input, 'invalid');
+        pw2Error.textContent = 'Passwords do not match.';
+    }
+}
+
+pw2Input.addEventListener('input', () => { validateConfirm(); updateSubmit(); });
+
+// ---------------------------------------------------------------
+// Enable/disable submit
+// ---------------------------------------------------------------
+const submitBtn = $('submitBtn');
+
+function updateSubmit() {
+    const confirmOk = pw2Input.value && pw1Input.value === pw2Input.value;
+    submitBtn.disabled = !(usernameValid && pwValid && confirmOk);
+}
+
+// ---------------------------------------------------------------
+// Final guard: block submit if frontend validation fails
+// ---------------------------------------------------------------
+$('signupForm').addEventListener('submit', e => {
+    const confirmOk = pw2Input.value && pw1Input.value === pw2Input.value;
+    if (!usernameValid || !pwValid || !confirmOk) {
+        e.preventDefault();
+    }
+});
+
+// Re-run if fields have values on page load (e.g. after back-end rejection)
+if (usernameInput.value) usernameInput.dispatchEvent(new Event('input'));
+if (pw1Input.value)      pw1Input.dispatchEvent(new Event('input'));
+if (pw2Input.value)      pw2Input.dispatchEvent(new Event('input'));
+</script>
 </body>
 </html>
