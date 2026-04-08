@@ -1,13 +1,35 @@
-from django.shortcuts import render, redirect
+from datetime import date, timedelta
+
+from django.db import models as db_models
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django import forms
 import re
 
 from .models import Entry
+
+
+# ------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------
+
+def calculate_streak(user):
+    """Count consecutive days (ending today or yesterday) with entries."""
+    entry_dates = set(
+        Entry.objects.filter(user=user)
+        .dates('created_at', 'day')
+        .values_list('created_at__date', flat=True)
+    )
+    today = date.today()
+    check = today if today in entry_dates else today - timedelta(days=1)
+    streak = 0
+    while check in entry_dates:
+        streak += 1
+        check -= timedelta(days=1)
+    return streak
 
 
 # ------------------------------------------------------------------
@@ -16,8 +38,7 @@ from .models import Entry
 
 class SignupForm(forms.Form):
     username = forms.CharField(
-        max_length=150,
-        min_length=3,
+        max_length=150, min_length=3,
         widget=forms.TextInput(attrs={'autocomplete': 'username'}),
     )
     password1 = forms.CharField(
@@ -49,9 +70,7 @@ class SignupForm(forms.Form):
         if not re.search(r'[^A-Za-z0-9]', password):
             errors.append('at least one special character')
         if errors:
-            raise forms.ValidationError(
-                'Password must contain: ' + ', '.join(errors) + '.'
-            )
+            raise forms.ValidationError('Password must contain: ' + ', '.join(errors) + '.')
         return password
 
     def clean(self):
@@ -63,9 +82,10 @@ class SignupForm(forms.Form):
         return cleaned
 
     def save(self):
-        username = self.cleaned_data['username']
-        password = self.cleaned_data['password1']
-        return User.objects.create_user(username=username, password=password)
+        return User.objects.create_user(
+            username=self.cleaned_data['username'],
+            password=self.cleaned_data['password1'],
+        )
 
 
 # ------------------------------------------------------------------
@@ -75,12 +95,52 @@ class SignupForm(forms.Form):
 @login_required
 def index(request):
     if request.method == 'POST':
-        title = request.POST.get('title')
-        description = request.POST.get('description')
-        Entry.objects.create(user=request.user, title=title, description=description)
+        title       = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        mood        = request.POST.get('mood', 'neutral')
+        if title and description:
+            Entry.objects.create(user=request.user, title=title, description=description, mood=mood)
         return redirect('index')
-    entries = Entry.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'index.html', {'entries': entries})
+
+    entries = Entry.objects.filter(user=request.user)
+
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        entries = entries.filter(
+            db_models.Q(title__icontains=q) | db_models.Q(description__icontains=q)
+        )
+
+    # Mood filter
+    mood_filter = request.GET.get('mood', '')
+    if mood_filter:
+        entries = entries.filter(mood=mood_filter)
+
+    # Date filter
+    date_filter = request.GET.get('date', '')
+    if date_filter:
+        entries = entries.filter(created_at__date=date_filter)
+
+    total  = Entry.objects.filter(user=request.user).count()
+    today_count = Entry.objects.filter(user=request.user, created_at__date=date.today()).count()
+    streak = calculate_streak(request.user)
+
+    return render(request, 'index.html', {
+        'entries':      entries,
+        'streak':       streak,
+        'total':        total,
+        'today_count':  today_count,
+        'q':            q,
+        'mood_filter':  mood_filter,
+        'date_filter':  date_filter,
+    })
+
+
+@login_required
+@require_POST
+def delete_entry(request, pk):
+    Entry.objects.filter(pk=pk, user=request.user).delete()
+    return redirect('index')
 
 
 def signup(request):

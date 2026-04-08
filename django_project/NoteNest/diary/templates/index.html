@@ -1,41 +1,680 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="light">
 <head>
-    <title>Private Diary</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteNest – My Diary</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 500px; }
-        .header { display: flex; justify-content: space-between; align-items: center; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; background: #4a90e2; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .entry { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #4a90e2; }
-        .logout-btn { color: #ff4757; text-decoration: none; font-size: 14px; }
+        /* ===================== CSS VARIABLES / THEMES ===================== */
+        :root {
+            --bg:           #f0f4ff;
+            --card-bg:      #ffffff;
+            --nav-bg:       linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --text-primary: #1a1a2e;
+            --text-muted:   #64748b;
+            --border:       #e2e8f0;
+            --input-bg:     #fafafa;
+            --accent:       #667eea;
+            --accent2:      #764ba2;
+            --shadow:       0 4px 24px rgba(102,126,234,.10);
+            --shadow-card:  0 2px 12px rgba(102,126,234,.08);
+            --danger:       #ef4444;
+            --success:      #22c55e;
+        }
+        [data-theme="dark"] {
+            --bg:           #0d0d1a;
+            --card-bg:      #1a1a2e;
+            --text-primary: #e2e8f0;
+            --text-muted:   #94a3b8;
+            --border:       #2d2d50;
+            --input-bg:     #12122a;
+            --shadow:       0 4px 24px rgba(0,0,0,.40);
+            --shadow-card:  0 2px 12px rgba(0,0,0,.30);
+        }
+
+        /* ===================== RESET ===================== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background .3s, color .3s;
+        }
+
+        /* ===================== NAVBAR ===================== */
+        .navbar {
+            background: var(--nav-bg);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 16px rgba(102,126,234,.3);
+        }
+        .nav-brand {
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-user {
+            color: rgba(255,255,255,.85);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .nav-btn {
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.25);
+            color: #fff;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,.28); }
+        .theme-btn {
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.25);
+            color: #fff;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background .2s;
+        }
+        .theme-btn:hover { background: rgba(255,255,255,.28); }
+
+        /* ===================== LAYOUT ===================== */
+        .page { max-width: 1000px; margin: 0 auto; padding: 28px 20px 60px; }
+
+        /* ===================== STAT CARDS ===================== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            transition: transform .2s, box-shadow .2s;
+            animation: fadeUp .4s ease both;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+        .stat-icon { font-size: 28px; margin-bottom: 6px; }
+        .stat-value { font-size: 28px; font-weight: 800; color: var(--accent); }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
+
+        /* ===================== SECTION HEADING ===================== */
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 12px;
+            margin-top: 28px;
+        }
+
+        /* ===================== ADD ENTRY FORM ===================== */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            animation: fadeUp .4s .05s ease both;
+        }
+        .form-card h2 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .form-row { display: grid; gap: 12px; }
+        .field-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color .2s, box-shadow .2s, background .3s;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(102,126,234,.12);
+            background: var(--card-bg);
+        }
+        textarea { resize: vertical; min-height: 100px; }
+        .word-count-bar {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        /* Mood picker */
+        .mood-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .mood-option { display: none; }
+        .mood-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--input-bg);
+            transition: all .18s;
+            user-select: none;
+        }
+        .mood-label:hover { border-color: var(--accent); color: var(--accent); }
+        .mood-option:checked + .mood-label {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, #667eea18, #764ba218);
+            color: var(--accent);
+        }
+
+        /* Submit btn */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .2s, transform .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .btn-primary:hover  { opacity: .9; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        /* ===================== SEARCH / FILTER BAR ===================== */
+        .filter-bar {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            animation: fadeUp .4s .08s ease both;
+        }
+        .filter-field { flex: 1; min-width: 160px; }
+        .filter-field input,
+        .filter-field select { margin: 0; }
+        .btn-filter {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-filter:hover { opacity: .88; }
+        .btn-clear {
+            background: var(--input-bg);
+            color: var(--text-muted);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: border-color .2s;
+        }
+        .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
+        .filter-results {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        /* ===================== ENTRY CARDS ===================== */
+        .entries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+        }
+        .entry-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            border-top: 4px solid var(--accent);
+            transition: transform .2s, box-shadow .2s;
+            animation: fadeUp .35s ease both;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .entry-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+
+        .entry-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .entry-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+            flex: 1;
+        }
+        .mood-badge {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .entry-body {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .entry-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+        .entry-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .entry-words {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--input-bg);
+            border-radius: 6px;
+            padding: 2px 7px;
+        }
+        .btn-delete {
+            background: none;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 5px 10px;
+            color: var(--danger);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all .18s;
+        }
+        .btn-delete:hover {
+            background: #fff0f0;
+            border-color: var(--danger);
+        }
+        [data-theme="dark"] .btn-delete:hover { background: #2d1515; }
+
+        /* Mood accent colors */
+        .entry-card.mood-happy   { border-top-color: #22c55e; }
+        .entry-card.mood-neutral { border-top-color: #f59e0b; }
+        .entry-card.mood-sad     { border-top-color: #3b82f6; }
+        .entry-card.mood-angry   { border-top-color: #ef4444; }
+
+        /* ===================== EMPTY STATE ===================== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            animation: fadeUp .4s ease both;
+        }
+        .empty-state .emoji { font-size: 60px; margin-bottom: 16px; }
+        .empty-state h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .empty-state p  { color: var(--text-muted); font-size: 14px; }
+
+        /* ===================== DELETE CONFIRM MODAL ===================== */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.5);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 32px 28px;
+            max-width: 360px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,.2);
+            animation: popIn .25s ease;
+        }
+        .modal h3 { font-size: 18px; margin-bottom: 8px; }
+        .modal p  { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+        .modal-btns { display: flex; gap: 12px; justify-content: center; }
+        .btn-cancel {
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: border-color .2s;
+        }
+        .btn-cancel:hover { border-color: var(--accent); }
+        .btn-confirm-delete {
+            background: var(--danger);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            transition: opacity .2s;
+        }
+        .btn-confirm-delete:hover { opacity: .88; }
+
+        /* ===================== ANIMATIONS ===================== */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(.92); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        /* ===================== RESPONSIVE ===================== */
+        @media (max-width: 600px) {
+            .stats-row { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .stat-card { padding: 14px 10px; }
+            .stat-value { font-size: 22px; }
+            .filter-bar { flex-direction: column; }
+            .entries-grid { grid-template-columns: 1fr; }
+            .nav-user { display: none; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Hi, {{ user.username }}!</h1>
-            <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-btn" style="background:none; width:auto;">Logout</button></form>
-        </div>
 
-        <div class="card">
-            <form method="POST">
-                {% csrf_token %}
-                <input type="text" name="title" placeholder="Title" required>
-                <textarea name="description" placeholder="Your secret thoughts..." rows="4" required></textarea>
-                <button type="submit">Save to Database</button>
-            </form>
-        </div>
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+    <div class="nav-brand">📓 NoteNest</div>
+    <div class="nav-right">
+        <span class="nav-user">👤 {{ user.username }}</span>
+        <button class="theme-btn" id="themeBtn" title="Toggle dark mode">🌙</button>
+        <form action="{% url 'logout' %}" method="post" style="margin:0">
+            {% csrf_token %}
+            <button type="submit" class="nav-btn">⬡ Logout</button>
+        </form>
+    </div>
+</nav>
 
+<!-- ===== PAGE ===== -->
+<div class="page">
+
+    <!-- Stats row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-value">{{ streak }}</div>
+            <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.06s">
+            <div class="stat-icon">📝</div>
+            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Total Entries</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.12s">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value">{{ today_count }}</div>
+            <div class="stat-label">Today</div>
+        </div>
+    </div>
+
+    <!-- Add entry form -->
+    <div class="section-title">✏️ New Entry</div>
+    <div class="form-card">
+        <form method="POST" id="entryForm">
+            {% csrf_token %}
+            <div class="form-row">
+                <div>
+                    <div class="field-label">Title</div>
+                    <input type="text" name="title" id="titleInput" placeholder="Give your entry a title…" required>
+                </div>
+                <div>
+                    <div class="field-label">How are you feeling?</div>
+                    <div class="mood-picker">
+                        <input class="mood-option" type="radio" name="mood" id="m-happy"   value="happy">
+                        <label class="mood-label" for="m-happy">😊 Happy</label>
+
+                        <input class="mood-option" type="radio" name="mood" id="m-neutral" value="neutral" checked>
+                        <label class="mood-label" for="m-neutral">😐 Neutral</label>
+
+                        <input class="mood-option" type="radio" name="mood" id="m-sad"     value="sad">
+                        <label class="mood-label" for="m-sad">😢 Sad</label>
+
+                        <input class="mood-option" type="radio" name="mood" id="m-angry"   value="angry">
+                        <label class="mood-label" for="m-angry">😡 Angry</label>
+                    </div>
+                </div>
+                <div>
+                    <div class="field-label">Your Thoughts</div>
+                    <textarea name="description" id="descInput" placeholder="Write your thoughts here…" rows="5" required></textarea>
+                    <div class="word-count-bar">
+                        <span id="wordCount">0</span> words
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="btn-primary">💾 Save Entry</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="section-title">🔍 Search & Filter</div>
+    <form method="GET" action="">
+        <div class="filter-bar">
+            <div class="filter-field" style="flex:2">
+                <div class="field-label">Search</div>
+                <input type="text" name="q" placeholder="Search by title or content…" value="{{ q }}">
+            </div>
+            <div class="filter-field">
+                <div class="field-label">Mood</div>
+                <select name="mood">
+                    <option value="">All moods</option>
+                    <option value="happy"   {% if mood_filter == 'happy'   %}selected{% endif %}>😊 Happy</option>
+                    <option value="neutral" {% if mood_filter == 'neutral' %}selected{% endif %}>😐 Neutral</option>
+                    <option value="sad"     {% if mood_filter == 'sad'     %}selected{% endif %}>😢 Sad</option>
+                    <option value="angry"   {% if mood_filter == 'angry'   %}selected{% endif %}>😡 Angry</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <div class="field-label">Date</div>
+                <input type="date" name="date" value="{{ date_filter }}">
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end">
+                <button type="submit" class="btn-filter">🔍 Search</button>
+                <a href="/" class="btn-clear">✕ Clear</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Entries -->
+    <div class="section-title">📖 Recent Entries</div>
+
+    {% if q or mood_filter or date_filter %}
+    <div class="filter-results">Showing {{ entries|length }} result{{ entries|length|pluralize }} for your filter</div>
+    {% endif %}
+
+    {% if entries %}
+    <div class="entries-grid">
         {% for entry in entries %}
-        <div class="entry">
-            <h3>{{ entry.title }}</h3>
-            <p>{{ entry.description }}</p>
-            <small>{{ entry.created_at }}</small>
+        <div class="entry-card mood-{{ entry.mood }}" style="animation-delay:{{ forloop.counter0 }}0ms">
+            <div class="entry-card-top">
+                <div class="entry-title">{{ entry.title }}</div>
+                <div class="mood-badge" title="{{ entry.get_mood_display }}">{{ entry.mood_emoji }}</div>
+            </div>
+            <div class="entry-body">{{ entry.description }}</div>
+            <div class="entry-footer">
+                <div class="entry-meta">
+                    <span>🕐 {{ entry.created_at|date:"M d, Y" }}</span>
+                    <span>{{ entry.created_at|time:"g:i A" }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span class="entry-words">{{ entry.word_count }}w</span>
+                    <button class="btn-delete" onclick="confirmDelete({{ entry.pk }}, '{{ entry.title|escapejs }}')" title="Delete entry">🗑</button>
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="emoji">📭</div>
+        <h3>{% if q or mood_filter or date_filter %}No entries match your filter{% else %}No entries yet{% endif %}</h3>
+        <p>{% if q or mood_filter or date_filter %}Try different search terms or clear the filter.{% else %}Start writing your first diary entry above — your thoughts matter! ✨{% endif %}</p>
+    </div>
+    {% endif %}
+
+</div><!-- /page -->
+
+<!-- ===== DELETE MODAL ===== -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <div style="font-size:40px;margin-bottom:12px">🗑️</div>
+        <h3>Delete Entry?</h3>
+        <p id="modalMsg">This entry will be permanently deleted.</p>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <form id="deleteForm" method="POST" style="margin:0">
+                {% csrf_token %}
+                <button type="submit" class="btn-confirm-delete">Yes, Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ---- Dark mode ----
+const themeBtn = document.getElementById('themeBtn');
+const html = document.documentElement;
+
+function applyTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    localStorage.setItem('nn-theme', theme);
+}
+
+// Load saved preference
+applyTheme(localStorage.getItem('nn-theme') || 'light');
+
+themeBtn.addEventListener('click', () => {
+    applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+});
+
+// ---- Live word count ----
+const descInput  = document.getElementById('descInput');
+const wordCount  = document.getElementById('wordCount');
+
+descInput.addEventListener('input', () => {
+    const words = descInput.value.trim() ? descInput.value.trim().split(/\s+/).length : 0;
+    wordCount.textContent = words;
+});
+
+// ---- Delete confirmation modal ----
+function confirmDelete(pk, title) {
+    document.getElementById('modalMsg').textContent =
+        `"${title}" will be permanently deleted. This cannot be undone.`;
+    document.getElementById('deleteForm').action = `/delete/${pk}/`;
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+// Close modal when clicking backdrop
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
 </body>
 </html>
