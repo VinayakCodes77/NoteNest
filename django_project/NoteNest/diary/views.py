@@ -1,6 +1,7 @@
-from datetime import date, timedelta
+from datetime import timedelta
 
 from django.db import models as db_models
+from django.utils import timezone as django_tz
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -17,13 +18,13 @@ from .models import Entry
 # ------------------------------------------------------------------
 
 def calculate_streak(user):
-    """Count consecutive days (ending today or yesterday) with entries."""
+    """Count consecutive days (IST) ending today or yesterday with entries."""
+    # Convert every stored UTC datetime to IST date
     entry_dates = set(
-        Entry.objects.filter(user=user)
-        .dates('created_at', 'day')
-        .values_list('created_at__date', flat=True)
+        django_tz.localtime(e.created_at).date()
+        for e in Entry.objects.filter(user=user).only('created_at')
     )
-    today = date.today()
+    today = django_tz.localtime(django_tz.now()).date()
     check = today if today in entry_dates else today - timedelta(days=1)
     streak = 0
     while check in entry_dates:
@@ -121,9 +122,15 @@ def index(request):
     if date_filter:
         entries = entries.filter(created_at__date=date_filter)
 
-    total  = Entry.objects.filter(user=request.user).count()
-    today_count = Entry.objects.filter(user=request.user, created_at__date=date.today()).count()
-    streak = calculate_streak(request.user)
+    # Use IST-aware "today" for correct date boundaries
+    now_ist   = django_tz.localtime(django_tz.now())
+    today_ist = now_ist.date()
+    day_start = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end   = day_start + timedelta(days=1)
+
+    total       = Entry.objects.filter(user=request.user).count()
+    today_count = Entry.objects.filter(user=request.user, created_at__gte=day_start, created_at__lt=day_end).count()
+    streak      = calculate_streak(request.user)
 
     return render(request, 'index.html', {
         'entries':      entries,

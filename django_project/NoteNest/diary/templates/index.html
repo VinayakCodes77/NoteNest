@@ -1,3 +1,4 @@
+{% load tz %}
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -591,8 +592,8 @@
             <div class="entry-body">{{ entry.description }}</div>
             <div class="entry-footer">
                 <div class="entry-meta">
-                    <span>🕐 {{ entry.created_at|date:"M d, Y" }}</span>
-                    <span>{{ entry.created_at|time:"g:i A" }}</span>
+                    <span>🕐 {{ entry.created_at|localtime|date:"M d, Y" }}</span>
+                    <span>{{ entry.created_at|localtime|time:"g:i A" }} IST</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px">
                     <span class="entry-words">{{ entry.word_count }}w</span>
